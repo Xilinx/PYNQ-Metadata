@@ -12,6 +12,21 @@ import re
 import subprocess
 import os
 import warnings
+from pathlib import Path
+
+
+def attempt_download(url:str, path:Path)->None:
+    """" Attempts to download a file and place it in the path. Stops siliently if it is not able to """
+    import urllib.request
+    try:
+        opener = urllib.request.build_opener()
+        opener.addheaders = [(('User-Agent', 'Mozilla/5.0'))]
+        urllib.request.install_opener(opener)
+        urllib.request.urlretrieve(url, path) 
+    except:
+        pass
+
+
 
 # extend the package files by directory or by file
 def extend_pynq_metadata_package(data_list):
@@ -24,17 +39,9 @@ def extend_pynq_metadata_package(data_list):
         elif os.path.isfile(data):
             pynq_metadata_files.append(os.path.join("..", data))
 
-# Download d3 dependency
-import urllib.request
-from pathlib import Path
-try:
-    opener = urllib.request.build_opener()
-    opener.addheaders = [(('User-Agent', 'Mozilla/5.0'))]
-    urllib.request.install_opener(opener)
-    urllib.request.urlretrieve('http://d3js.org/d3.v4.min.js', 
-                                Path('pynqmetadata/frontends/visualisations/lib/d3.v4.min.js'))
-except:
-    pass
+attempt_download(url='http://d3js.org/d3.v4.min.js', path=Path('pynqmetadata/frontends/visualisations/lib/d3.v4.min.js'))
+attempt_download(url='https://www.xilinx.com/bin/public/openDownload?filename=pynqhelloworld.resizer.pynqz2.hwh', path=Path('pynqmetadata/tests/hwhs/resizer.hwh'))
+
 
 # Get the version
 ver_file = open("./pynqmetadata/version.txt", "r")
@@ -52,7 +59,8 @@ extend_pynq_metadata_package([
         'pynqmetadata/frontends/',
         'pynqmetadata/frontends/visualisations',
         'pynqmetadata/frontends/visualisations/lib',
-        'pynqmetadata/version.txt'
+        'pynqmetadata/version.txt',
+        'pynqmetadata/tests'
     ])
 
 # Required packages
