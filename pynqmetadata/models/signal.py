@@ -92,6 +92,7 @@ class Signal(MetadataObject):
         """
         if self._con_ref_exists(ref):
             self.con_refs.remove(ref)
+            del self._connections[ref]
         else:
             raise PortSignalNotFound(
                 f"Could not find reference connection to {ref} in {self.ref}"
