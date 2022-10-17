@@ -1,4 +1,4 @@
 # Copyright (C) 2022 Xilinx, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
-from .ip_dict_view import IpDictView
+from . import runtime
