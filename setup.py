@@ -41,6 +41,7 @@ def extend_pynq_metadata_package(data_list):
 
 attempt_download(url='http://d3js.org/d3.v4.min.js', path=Path('pynqmetadata/frontends/visualisations/lib/d3.v4.min.js'))
 attempt_download(url='https://www.xilinx.com/bin/public/openDownload?filename=pynqhelloworld.resizer.pynqz2.hwh', path=Path('pynqmetadata/tests/hwhs/resizer.hwh'))
+attempt_download(url='https://raw.githubusercontent.com/strath-sdr/rfsoc_sam/master/boards/RFSoC4x2/rfsoc_sam/bitstream/rfsoc_sam.hwh', path=Path('pynqmetadata/tests/hwhs/rfsoc_sam.hwh'))
 
 
 # Get the version
