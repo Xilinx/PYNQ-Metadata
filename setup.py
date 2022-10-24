@@ -47,9 +47,11 @@ attempt_download(url='https://raw.githubusercontent.com/strath-sdr/rfsoc_sam/mas
 # Get the version
 ver_file = open("./pynqmetadata/version.txt", "r")
 ver_str = ver_file.readline();
-with open("README.md", encoding='utf-8') as fh:
-    readme_lines = fh.readlines()[:]
-long_description = (''.join(readme_lines))
+
+# read the contents of your README file
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 # Get the files
 pynq_metadata_files=[]
@@ -74,7 +76,9 @@ required = [
 setup(  name='pynqmetadata',
         version=ver_str,
         description="Extensible, Modular, Metadata layer for PYNQ projects",
-        url='',
+        long_description=long_description,
+        long_description_content_type='text/markdown',
+        url='http://github.com/Xilinx/PYNQ-Metadata',
         author='Pynq',
         author_email='pynq_support@xilinx.com',
         packages=find_packages(),
