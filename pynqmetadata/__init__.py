@@ -29,4 +29,4 @@ from .models.zynq_proc_sys_core import ZynqProcSysCore
 from .models.clk_port import ClkPort
 from .models.rst_port import RstPort
 
-__version__ = "0.3.1"
+__version__ = "0.1.2"
