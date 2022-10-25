@@ -1,5 +1,5 @@
 ![pynq_logo](https://github.com/Xilinx/PYNQ/raw/master/logo.png)
-### version 0.1.0
+### version 0.1.1
 
 PYNQ-Metadata is an open-source project from Xilinx and is part of the PYNQ ecosystem. It's aims are to provide an abstract description of reconfigurable system designs. It is currently used internally within PYNQ to represent the hardware design currently configured in the Programmable Logic of Zynq-based devices. It is currently in pre-release.  
 

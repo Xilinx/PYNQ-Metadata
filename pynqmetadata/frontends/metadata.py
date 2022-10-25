@@ -7,7 +7,6 @@ from distutils.command.install_headers import install_headers
 from typing import Optional
 
 from pydantic import Field
-from pynqutils.build_utils import XsaParser
 
 from ..models.metadata_extension import MetadataExtension
 from ..models.metadata_object import MetadataObject
