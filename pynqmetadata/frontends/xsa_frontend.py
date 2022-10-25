@@ -1,7 +1,6 @@
 # Copyright (C) 2022 Xilinx, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
-from pynqutils.build_utils import XsaParser
 from .hwh_frontend import HwhFrontend
 from .json_frontend import JsonFrontend
 from ..models.metadata_object import MetadataObject
@@ -19,6 +18,7 @@ def XsaFrontend(input: str) -> MetadataObject:
     Convert an XSA into a metadata object. The XSA may contain
     multiple hwh files / BDC descriptions / or Metadata json files.
     """
+    from pynqutils.build_utils import XsaParser
     xsa = XsaParser(input)
     xsa.load_bdc_metadata()
     md = HwhFrontend(_hwhfile=xsa.defaultHwhPaths[0])
