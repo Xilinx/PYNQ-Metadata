@@ -11,7 +11,7 @@ PYNQ-Metadata can parse the design of a system in the following formats:
 
 To install PYNQ-Metadata use the following command:
 ```
-python3 -m pip install git+https://github.com/Xilinx/PYNQ-Metadata
+python3 -m pip install pynqmetadata
 ```
 
 To parse a design use the following python commands:
