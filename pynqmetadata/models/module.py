@@ -198,12 +198,7 @@ class Module(Block):
                     )
                 else:
                     if not isinstance(core, Module):
-                        if (core.vlnv.library != "module_ref"):  # Add a hierarchy for PR regions
-                            self._hierarchies.add(core)
-                        else:
-                            self._hierarchies.add(
-                                Hierarchy(name=core.name, path=core.name, pr_region=True)
-                            )
+                        self._hierarchies.add(core)
                     else:
                         self._hierarchies.add(
                             Hierarchy(name=core.name, path=core.name, pr_region=True)
@@ -229,8 +224,6 @@ class Module(Block):
             )
         else:
             if isinstance(core, Module):
-                h.add(Hierarchy(name=h_strs[0], path=f"{path}/{h_strs[0]}", pr_region=True))
-            elif core.vlnv.library == "module_ref":
                 h.add(Hierarchy(name=h_strs[0], path=f"{path}/{h_strs[0]}", pr_region=True))
             else:
                 h.add(core)
