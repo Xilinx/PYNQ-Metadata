@@ -1,5 +1,5 @@
 ![pynq_logo](https://github.com/Xilinx/PYNQ/raw/master/logo.png)
-### version 0.1.3
+### version 0.1.4
 
 PYNQ-Metadata is an open-source project from Xilinx and is part of the PYNQ ecosystem. It's aims are to provide an abstract description of reconfigurable system designs. It is currently used internally within PYNQ to represent the hardware design currently configured in the Programmable Logic of Zynq-based devices. It is currently in pre-release.  
 
@@ -37,6 +37,7 @@ All python code for the ``PYNQ-Metadata`` package can be found in the `/pynqmeta
 
 
 ## Changelog
+* v0.1.4 : Fixing runtime metadata views for when the PS is contained within a hierarchy. Relaxing the Python version constraint (for x86). 
 * v0.1.3 : Fixing python version requirement 
 * v0.1.2 : Fixed issue where custom IP was being interpreted as an empty hierarchy
 * v0.1.1 : Fixed circular dependency issue with PYNQ-Utils
