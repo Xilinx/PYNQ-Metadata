@@ -449,11 +449,18 @@ class HwhFrontend(Module):
         """
         for i in self._root.iter("MEMRANGE"):
             if i.get("MEMTYPE") == "REGISTER" or i.get("MEMTYPE") == "MEMORY":
-                core = self.blocks[i.get("INSTANCE")]
-                port = core.ports[i.get("SLAVEBUSINTERFACE")]
+                
+                if isinstance(self, Module) and (i.get("INSTANCE") in self.ports): 
+                    port = self.ports[i.get("INSTANCE")] 
+                else:
+                    core = self.blocks[i.get("INSTANCE")]
+                    port = core.ports[i.get("SLAVEBUSINTERFACE")]
+
                 if isinstance(port, SubordinatePort):
                     port.baseaddr = int(i.get("BASEVALUE"), 16)
                     port.range = (int(i.get("HIGHVALUE"), 16) - port.baseaddr) + 1
+                elif port.external and isinstance(port, ManagerPort):
+                    pass
                 else:
                     raise UnexpectedPortTypeError(
                         f"Expected {port.ref} to be SubordinatePort when assigning base address"
