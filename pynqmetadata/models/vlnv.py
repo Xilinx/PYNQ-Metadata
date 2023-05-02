@@ -40,3 +40,7 @@ class Vlnv:
     def str(self) -> str:
         """Returns a stringified version of the VLNV"""
         return f"{self.vendor}:{self.library}:{self.name}:{self.version[0]}.{self.version[1]}"
+                
+    def __hash__(self):
+        """Returns a hash of the object."""
+        return hash(self.str)
