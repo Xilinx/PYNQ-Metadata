@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
       with:
-        python-version: "3.10"
+        python-version: "3.11"
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
@@ -31,12 +31,12 @@ jobs:
         pip install git+https://github.com/Xilinx/PYNQ-Utils
     - name: Test with pytest
       run: |
-        pytest --doctest-modules --junitxml=junit/test-results-python3.10.xml
+        pytest --doctest-modules --junitxml=junit/test-results-python3.11.xml
     - name: Upload pytest results
       uses: actions/upload-artifact@v1
       with:
-        name: pytest-results-python3.10
-        path: junit/test-results-python3.10.xml
+        name: pytest-results-python3.11
+        path: junit/test-results-python3.11.xml
       if: ${{ always() }} 
     - name: Upload Coverage
       uses: codecov/codecov-action@v1
