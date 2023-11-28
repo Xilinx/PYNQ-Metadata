@@ -461,10 +461,6 @@ class HwhFrontend(Module):
                     port.range = (int(i.get("HIGHVALUE"), 16) - port.baseaddr) + 1
                 elif port.external and isinstance(port, ManagerPort):
                     pass
-                else:
-                    raise UnexpectedPortTypeError(
-                        f"Expected {port.ref} to be SubordinatePort when assigning base address"
-                    )
 
     def _populate_subordinate_regmap(self) -> None:
         """
