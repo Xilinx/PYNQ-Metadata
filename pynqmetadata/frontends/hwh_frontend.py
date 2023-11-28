@@ -491,6 +491,9 @@ class HwhFrontend(Module):
                     elif addrblock.get("INTERFACE") in core.ports:
                         _port_available = True
                         _portname = addrblock.get("INTERFACE")
+                    elif addrblock.get("INTERFACE") == "aximm" and "AXI_FULL" in core.ports:
+                        _port_available = True
+                        _portname = "AXI_FULL"
 
                     if _port_available:
                         port = core.ports[_portname]
