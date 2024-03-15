@@ -37,6 +37,7 @@ All python code for the ``PYNQ-Metadata`` package can be found in the `/pynqmeta
 
 
 ## Changelog
+* v0.1.7 : Relaxing constraint on address mapping due to issues with rfsoc4x2_base parsing. 
 * v0.1.6 : Python3.11 support added (Thanks @modularizer) 
 * v0.1.5 : Prevent parsing error when external AXI ports are present in the design. 
 * v0.1.4 : Fixing runtime metadata views for when the PS is contained within a hierarchy. Relaxing the Python version constraint (for x86). 
