@@ -20,6 +20,7 @@ class Core(Block):
 
     vlnv: Vlnv = None
     type: str = "core"
+    monitor: bool = False
 
     def exists(self, item: MetadataObject) -> bool:
         """Returns true if item is a parameter or a port that is present in this core"""
