@@ -35,7 +35,7 @@ class ClockDictView:
                 for i in range(4):
                     repr_dict[i] = {}
                     repr_dict[i]["enable"] = int(core.find_clock_enable(i))
-                    repr_dict[i]["srcsel"] = int(core.find_srcsel(i))
+                    repr_dict[i]["srcsel"] = str(core.find_srcsel(i))
                     for j in range(2):
                         repr_dict[i][f"divisor{j}"] = core.find_clock_divisor(i, j)
 
