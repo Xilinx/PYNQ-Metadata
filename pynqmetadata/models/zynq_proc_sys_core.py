@@ -22,6 +22,10 @@ class ZynqProcSysCore(ProcSysCore):
         )
     )
 
+    def srcsel_param_name(self, clk_id: int) -> str:
+        """Returns the name of the clock SRCSEL parameter for this PS"""
+        return f"PCW_FCLK{clk_id}_PERIPHERAL_CLKSRC"
+
     def clk_div_param_name(self, clk_id: int, div_id: int) -> str:
         """Returns the name of the clock div parameters for this PS"""
         return f"PCW_FCLK{clk_id}_PERIPHERAL_DIVISOR{div_id}"

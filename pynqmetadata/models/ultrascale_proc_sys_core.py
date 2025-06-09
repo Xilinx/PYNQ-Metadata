@@ -18,6 +18,10 @@ class UltrascaleProcSysCore(ProcSysCore):
         default_factory=lambda: ({"pl_ps_irq0": ((121, 8),), "pl_ps_irq1": ((136, 8),)})
     )
 
+    def srcsel_param_name(self, clk_id: int) -> str:
+        """Returns the name of the clock SRCSEL parameter for this PS"""
+        return f"PSU__CRL_APB__PL{clk_id}_REF_CTRL__SRCSEL"
+
     def clk_div_param_name(self, clk_id: int, div_id: int) -> str:
         """Returns the name of the clock div parameter for this PS"""
         return f"PSU__CRL_APB__PL{clk_id}_REF_CTRL__DIVISOR{div_id}"
