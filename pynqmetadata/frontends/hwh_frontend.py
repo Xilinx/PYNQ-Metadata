@@ -102,6 +102,9 @@ def core_factory(module: ElementTree) -> Block:
             )
         )
 
+    # Check to see if it is a monitor core (relaxing signal polarity checking later)
+    core.monitor = (module.get("IPTYPE") == "MONITOR")
+
     return core
 
 

@@ -16,13 +16,11 @@ from ..errors import (
 )
 from .metadata_object import MetadataObject
 
-
 @dataclass(repr=False)
 class Signal(MetadataObject):
     """
     A signal object. These are nets that
     are grouped together to form a port.
-    They keep track of what they are connected
     to in the metadata.
     """
 
@@ -103,6 +101,13 @@ class Signal(MetadataObject):
         Checks to make sure that the polarity of sig
         means that it is able to connect to this signal
         """
+        # Skip the check if we are connecting to a monitor type core
+        if hasattr(self._parent, "_parent"): 
+            if hasattr(self._parent._parent, "type"):
+                if self._parent._parent.type == "core-ip":
+                    if self._parent._parent.monitor:
+                        return 
+
         if not (self.external or sig.external):
             if sig.driver == self.driver:
                 raise WrongPolarityConnection(
