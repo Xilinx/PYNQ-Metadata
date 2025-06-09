@@ -65,6 +65,25 @@ class ProcSysCore(Core):
 
             return ret
 
+    def srcsel_param_name(self, clk_id: int) -> str:
+        """Returns the name of the clock SRCSEL parameter for this PS.
+        Default is the same format as Ultrascale."""
+        return f"PSU__CRL_APB__PL{clk_id}_REF_CTRL__SRCSEL"
+
+    def find_srcsel(self, clk_id: int) -> bool:
+        """For a given clock id return the SRCSEL value"""
+        srcsel = self.srcsel_param_name(clk_id)
+        if srcsel in self.parameters:
+            value = self.parameters[srcsel].value
+            if value is not None:
+                return value
+            else:
+                return None
+        else:
+            raise ParameterNotFound(
+                f"Unable to find srcsel {srcsel} for ps {self.ref}"
+            )
+
     def clk_div_param_name(self, clk_id: int, div_id: int) -> str:
         """Returns the name of the clock div parameter for this PS.
         Default is the same format as Ultrascale."""
