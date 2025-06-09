@@ -10,8 +10,8 @@ jobs:
     timeout-minutes: 10
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
     - name: Install Dependencies
@@ -33,13 +33,13 @@ jobs:
       run: |
         pytest --doctest-modules --junitxml=junit/test-results-python3.11.xml
     - name: Upload pytest results
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: pytest-results-python3.11
         path: junit/test-results-python3.11.xml
       if: ${{ always() }} 
     - name: Upload Coverage
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v5
       with:
         token: $${{ secrets.CODECOV_TOKEN }}
 
