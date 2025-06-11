@@ -65,6 +65,22 @@ class ProcSysCore(Core):
 
             return ret
 
+    def find_clock_select(self, clk_id) -> int:
+        """For a given clock id and divisor id return the clock divisor"""
+        src_sel_name = self.clk_src_sel_param_name(clk_id)
+        if src_sel_name in self.parameters:
+            src_sel = self.parameters[src_sel_name].value
+            if src_sel is not None:
+                return src_sel
+            else:
+                raise ValueError(
+                    f"Clock select {src_sel} for PL clock {clk_id} has no value"
+                )
+        else:
+            raise ParameterNotFound(
+                f"Unable to find a clock select {src_sel} for PL clock {clk_id}"
+            )
+            
     def clk_div_param_name(self, clk_id: int, div_id: int) -> str:
         """Returns the name of the clock div parameter for this PS.
         Default is the same format as Ultrascale."""

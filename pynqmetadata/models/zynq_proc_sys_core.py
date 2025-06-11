@@ -29,3 +29,7 @@ class ZynqProcSysCore(ProcSysCore):
     def clk_enable_param_name(self, clk_id: int) -> str:
         """Returns the parameter for the clock enable for clock with ID clk_id on this PS"""
         return f"PCW_FPGA_FCLK{clk_id}_ENABLE"
+    
+    def clk_src_sel_param_name(self, clk_id: int):
+        """Returns the name of the PL clock select parameter for given clk_id."""
+        return f"PCW_FCLK{clk_id}_PERIPHERAL_CLKSRC"

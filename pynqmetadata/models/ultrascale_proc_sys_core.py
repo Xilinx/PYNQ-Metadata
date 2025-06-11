@@ -25,3 +25,9 @@ class UltrascaleProcSysCore(ProcSysCore):
     def clk_enable_param_name(self, clk_id: int) -> str:
         """Returns the parameter for the clock enable for clock with id clk_id on this PS"""
         return f"PSU__FPGA_PL{clk_id}_ENABLE"
+    
+    def clk_src_sel_param_name(self, clk_id: int):
+        """Returns the name of the PL clock select parameter for given clk_id."""
+        return f"PSU__CRL_APB__PL{clk_id}_REF_CTRL__SRCSEL"
+
+
