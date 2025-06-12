@@ -66,7 +66,7 @@ class ProcSysCore(Core):
             return ret
 
     def find_clock_select(self, clk_id) -> int:
-        """For a given clock id and divisor id return the clock divisor"""
+        """For a given clock id return the selected PLL clock"""
         src_sel_name = self.clk_src_sel_param_name(clk_id)
         if src_sel_name in self.parameters:
             src_sel = self.parameters[src_sel_name].value
