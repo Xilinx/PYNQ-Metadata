@@ -15,5 +15,7 @@ class MetadataExtension(pydantic.BaseModel):
     of that space
     """
 
-    class Config:
-        underscore_attrs_are_private = True
+    # In Pydantic v2+, underscore attrs are private by default
+    if int(pydantic.__version__.split('.')[0]) < 2:
+        class Config:
+            underscore_attrs_are_private = True
