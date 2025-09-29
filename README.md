@@ -1,5 +1,5 @@
 ![pynq_logo](https://github.com/Xilinx/PYNQ/raw/master/logo.png)
-### version 0.1.8
+### version 0.1.9
 
 PYNQ-Metadata is an open-source project from Xilinx and is part of the PYNQ ecosystem. It's aims are to provide an abstract description of reconfigurable system designs. It is currently used internally within PYNQ to represent the hardware design currently configured in the Programmable Logic of Zynq-based devices. It is currently in pre-release.  
 
@@ -37,6 +37,7 @@ All python code for the ``PYNQ-Metadata`` package can be found in the `/pynqmeta
 
 
 ## Changelog
+* v0.1.9 : Locking pydantic version
 * v0.1.8 : Add parsing of clock select
 * v0.1.7 : Relaxing constraint on address mapping due to issues with rfsoc4x2_base parsing. 
 * v0.1.6 : Python3.11 support added (Thanks @modularizer) 
