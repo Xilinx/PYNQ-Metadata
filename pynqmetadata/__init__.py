@@ -1,4 +1,5 @@
-# Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 Xilinx, Inc.
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 from . import errors
@@ -23,6 +24,7 @@ from .models.signal import Signal
 from .models.stream_port import StreamPort
 from .models.subordinate_port import SubordinatePort
 from .models.ultrascale_proc_sys_core import UltrascaleProcSysCore
+from .models.versal_proc_sys_core import VersalProcSysCore
 from .models.vlnv import Vlnv
 from .models.bus_connection import BusConnection
 from .models.zynq_proc_sys_core import ZynqProcSysCore

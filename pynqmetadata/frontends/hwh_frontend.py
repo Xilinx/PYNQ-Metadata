@@ -1,4 +1,5 @@
-# Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 Xilinx, Inc.
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
@@ -27,6 +28,7 @@ from ..models.signal import Signal
 from ..models.stream_port import StreamPort
 from ..models.subordinate_port import SubordinatePort
 from ..models.ultrascale_proc_sys_core import UltrascaleProcSysCore
+from ..models.versal_proc_sys_core import VersalProcSysCore
 from ..models.vlnv import Vlnv
 from ..models.zynq_proc_sys_core import ZynqProcSysCore
 from ..models.clk_port import ClkPort
@@ -79,6 +81,8 @@ def core_factory(module: ElementTree) -> Block:
             core = UltrascaleProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
         elif module.get("MODTYPE") == "processing_system7":
             core = ZynqProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
+        elif module.get("MODTYPE") in ("versal_cips", "pspmc"):
+            core = VersalProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
         else:
             core = ProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
 
@@ -454,7 +458,10 @@ class HwhFrontend(Module):
                     port = self.ports[i.get("INSTANCE")] 
                 else:
                     core = self.blocks[i.get("INSTANCE")]
-                    port = core.ports[i.get("SLAVEBUSINTERFACE")]
+                    slave_itf = i.get("SLAVEBUSINTERFACE")
+                    if slave_itf not in core.ports:
+                        continue
+                    port = core.ports[slave_itf]
 
                 if isinstance(port, SubordinatePort):
                     port.baseaddr = int(i.get("BASEVALUE"), 16)

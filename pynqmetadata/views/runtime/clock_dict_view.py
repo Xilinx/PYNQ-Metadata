@@ -1,10 +1,11 @@
-# Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 Xilinx, Inc.
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
 from typing import Dict
 
-from pynqmetadata import Module, ProcSysCore
+from pynqmetadata import Module, ProcSysCore, VersalProcSysCore
 from pynqmetadata.errors import FeatureNotYetImplemented
 
 
@@ -30,7 +31,12 @@ class ClockDictView:
         repr_dict = {}
 
         for core in self._md.blocks.values():
-            if isinstance(core, ProcSysCore):
+            if isinstance(core, VersalProcSysCore):
+                for i in range(4):
+                    repr_dict[i] = {}
+                    repr_dict[i]["enable"] = int(core.find_clock_enable(i))
+                    repr_dict[i]["frequency"] = core.find_clock_frequency(i)
+            elif isinstance(core, ProcSysCore):
                 for i in range(4):
                     repr_dict[i] = {}
                     repr_dict[i]["enable"] = int(core.find_clock_enable(i))
