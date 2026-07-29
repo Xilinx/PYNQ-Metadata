@@ -16,7 +16,7 @@ class AddressMap(MetadataObject):
         ..., description="The type of this memory region either Memory or Register"
     )
     subord_port: str = Field(
-        ..., decription="A string reference to the subord port linked to this region"
+        ..., description="A string reference to the subord port linked to this region"
     )
     subord_port_obj: SubordinatePort = Field(
         ...,

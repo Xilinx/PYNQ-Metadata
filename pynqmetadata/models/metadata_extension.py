@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import pydantic
+from pydantic import ConfigDict
 
 
 class MetadataExtension(pydantic.BaseModel):
@@ -15,5 +16,4 @@ class MetadataExtension(pydantic.BaseModel):
     of that space
     """
 
-    class Config:
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)

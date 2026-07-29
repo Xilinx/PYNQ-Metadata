@@ -4,8 +4,6 @@
 from enum import Enum
 from typing import List
 
-import pydantic
-
 from ..errors import InterruptSensitivityListError
 from .signal import Signal
 
@@ -31,14 +29,9 @@ class InterruptSignal(Signal):
     driver: bool
     sensitivity: List[SensitivityEnum]
 
-    @pydantic.validator("sensitivity")
-    @classmethod
-    def sensitivity_len_check(cls, value: List[SensitivityEnum]):
-        """
-        Check to make sure that the length of the sensitivity
-        is the same as the width of the wire
-        """
-        if len(value) != cls.width:
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if len(self.sensitivity) != self.width:
             raise InterruptSensitivityListError(
-                f"interrupt {cls.name} has a width {cls.width} but {len(value)} sensitivity were specified"
+                f"interrupt {self.name} has a width {self.width} but {len(self.sensitivity)} sensitivity were specified"
             )

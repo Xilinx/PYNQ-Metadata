@@ -69,7 +69,7 @@ extend_pynq_metadata_package([
 # Required packages
 required = [
         "jsonschema>=3.2.0",
-        "pydantic==1.9.1",
+        "pydantic>=2.0",
         "ipython",
 ]
 

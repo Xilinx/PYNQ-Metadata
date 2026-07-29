@@ -62,7 +62,7 @@ class MetadataObject:
             if a_ext not in self.ext.keys():
                 self.ext[a_ext] = a.ext[a_ext]
             else:
-                if self.ext[a_ext].dict() != a.ext[a_ext].dict():
+                if self.ext[a_ext].model_dump() != a.ext[a_ext].model_dump():
                     raise MergeConflict(
                         f"Extension space object {a_ext} is not equivalent for both objects"
                     )
@@ -108,7 +108,7 @@ class MetadataObject:
             ret = obj.dict()
         # is it a pydantic model?
         elif isinstance(obj, BaseModel):
-            ret = obj.dict()
+            ret = obj.model_dump()
         # Is it a list?
         elif isinstance(obj, list):
             ret = []
