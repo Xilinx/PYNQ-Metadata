@@ -1,4 +1,5 @@
-# Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 Xilinx, Inc.
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 from setuptools import setup, Extension, find_packages, Distribution
@@ -69,7 +70,7 @@ extend_pynq_metadata_package([
 # Required packages
 required = [
         "jsonschema>=3.2.0",
-        "pydantic==1.9.1",
+        "pydantic>=2.0",
         "ipython",
 ]
 
