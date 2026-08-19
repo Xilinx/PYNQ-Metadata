@@ -21,7 +21,6 @@ from ..models.metadata_extension import MetadataExtension
 from ..models.module import Module
 from ..models.parameter import Parameter
 from ..models.port import Port
-from ..models.proc_sys_core import ProcSysCore
 from ..models.register import Register
 from ..models.scalar_port import ScalarPort
 from ..models.signal import Signal
@@ -59,6 +58,19 @@ class BDNameExtension(MetadataExtension):
     )
 
 
+PROCESSING_SYSTEM_MODTYPES = {
+    "processing_system7": ZynqProcSysCore,
+    "zynq_ultra_ps_e": UltrascaleProcSysCore,
+    # Versal wraps the processing system in a configuration IP and describes
+    # the hard block in a separate handoff, so both are recognised.
+    "versal_cips": VersalProcSysCore,
+    "pspmc": VersalProcSysCore,
+    "ps_wizard": VersalProcSysCore,
+    "ps11": VersalProcSysCore,
+    "pmcps": VersalProcSysCore,
+}
+
+
 def core_factory(module: ElementTree) -> Block:
     """
     Based on the elementTree module tags generate
@@ -75,16 +87,13 @@ def core_factory(module: ElementTree) -> Block:
     if fullname is not None:
         fullname = fullname.lstrip("/")
 
-    # Processing System
-    if (module.get("IS_PL") is not None) and module.get("IS_PL") == "FALSE":
-        if module.get("MODTYPE") == "zynq_ultra_ps_e":
-            core = UltrascaleProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
-        elif module.get("MODTYPE") == "processing_system7":
-            core = ZynqProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
-        elif module.get("MODTYPE") in ("versal_cips", "pspmc"):
-            core = VersalProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
-        else:
-            core = ProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
+    # Processing System. Matched on MODTYPE because IS_PL is absent on some
+    # Versal wrappers, and not every block outside the PL is a processing
+    # system: AI Engine arrays and memory controllers are IP cores.
+    if module.get("MODTYPE") in PROCESSING_SYSTEM_MODTYPES:
+        core = PROCESSING_SYSTEM_MODTYPES[module.get("MODTYPE")](
+            name=name, vlnv=vlnv, hierarchy_name=fullname
+        )
 
     # BDC
     elif module.get("BDTYPE") == "BLOCK_CONTAINER":

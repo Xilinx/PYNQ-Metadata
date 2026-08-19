@@ -62,21 +62,24 @@ class VersalProcSysCore(ProcSysCore):
     type: str = "core-versal"
     ps_name: str = "versal_cips"
 
+    # Which parameter holds the packed configuration varies between boards and
+    # cannot be told from the module type, so both are tried.
+    _config_parameters = ("PS_PMC_CONFIG_INTERNAL", "PS11_CONFIG_INTERNAL")
+
     def expand_parameters(self) -> None:
-        """Expands PS_PMC_CONFIG_INTERNAL into individually named parameters.
+        """Expands the packed configuration into individually named parameters.
 
-        Vivado emits the whole CIPS configuration as a single packed string
-        for Versal, where Zynq and Ultrascale get a PARAMETER tag per setting.
-        Unpacking it lets the clocks be looked up by name on all three parts.
-        Settings that are already parameters keep their existing value, since
-        the HWH tags take precedence over the copies inside the packed string.
+        Versal packs the whole processing system configuration into one string
+        where Zynq and Ultrascale get a PARAMETER tag per setting. Existing
+        parameters keep their value: the HWH tags take precedence over the
+        copies inside the string.
         """
-        if "PS_PMC_CONFIG_INTERNAL" not in self.parameters:
-            return
-
-        config = self.parameters["PS_PMC_CONFIG_INTERNAL"].value or ""
-        for name, value in unpack_cips_config(config).items():
-            self.add(Parameter(name=name, value=value))
+        for config_name in self._config_parameters:
+            if config_name not in self.parameters:
+                continue
+            config = self.parameters[config_name].value or ""
+            for name, value in unpack_cips_config(config).items():
+                self.add(Parameter(name=name, value=value))
 
     def clk_div_param_name(self, clk_id: int, div_id: int) -> str:
         """Returns the name of the clock div parameter for this PS"""
