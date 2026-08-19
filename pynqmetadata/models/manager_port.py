@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 from __future__ import annotations
@@ -48,31 +49,49 @@ class ManagerPort(Port):
             else:
                 self.addrmap[i] = adr
 
+    @staticmethod
+    def _addrmap_key(subord_port: SubordinatePort, block: str) -> str:
+        """Key for a mapping. A port can front several regions, so the port
+        alone does not identify one."""
+        return f"{subord_port.ref}:{block}"
+
     def addrmap_exists(self, subord_port: SubordinatePort) -> bool:
         """returns true if a SubordinatePort exists in the address map for this manager"""
-        return subord_port.ref in self.addrmap
+        return any(a["subord_port"] == subord_port.ref for a in self.addrmap.values())
 
     def addrmap_remove(self, subord_port: SubordinatePort) -> None:
-        """Removes an address mapping from this manager port"""
-        if self.addrmap_exists(subord_port):
-            del self._addrmap_obj[subord_port.ref]
-            del self.addrmap[subord_port.ref]
-        else:
+        """Removes every address mapping to this subordinate port"""
+        keys = [
+            k for k, a in self.addrmap.items() if a["subord_port"] == subord_port.ref
+        ]
+        if not keys:
             raise AddrMapNotFound(
                 f"Could not find an address map from manager {self.ref} to subordinate {subord_port.ref}"
             )
+        for key in keys:
+            del self._addrmap_obj[key]
+            del self.addrmap[key]
 
     def addrmap_add(
-        self, block: str, memtype: str, subord_port: SubordinatePort
+        self,
+        block: str,
+        memtype: str,
+        subord_port: SubordinatePort,
+        baseaddr: Optional[int] = None,
+        addr_range: Optional[int] = None,
     ) -> None:
-        """Adds an address mapping to the manager port"""
-        if not self.addrmap_exists(subord_port):
-            self._addrmap_obj[subord_port.ref] = subord_port
-            self.addrmap[subord_port.ref] = {}
-            self.addrmap[subord_port.ref]["block"] = block
-            self.addrmap[subord_port.ref]["memtype"] = memtype
-            self.addrmap[subord_port.ref]["subord_port"] = subord_port.ref
-        else:
-            raise AddressMapAlreadyExists(
-                f"{subord_port.ref} is already an address target of manager {self.ref}"
-            )
+        """Adds an address mapping to the manager port.
+
+        A region is described once per interface reaching it, so re-adding
+        the same mapping is not an error."""
+        key = self._addrmap_key(subord_port, block)
+        if key in self.addrmap:
+            return
+        self._addrmap_obj[key] = subord_port
+        self.addrmap[key] = {
+            "block": block,
+            "memtype": memtype,
+            "subord_port": subord_port.ref,
+            "baseaddr": baseaddr,
+            "addr_range": addr_range,
+        }

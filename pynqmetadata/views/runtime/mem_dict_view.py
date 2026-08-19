@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
@@ -41,79 +42,86 @@ class MemDictView(MetadataView):
         if ps_core is None:
             raise MetadataObjectNotFound(f"Unable to find a PS in {self._md.ref}")
 
+        # Gather first: naming depends on how many regions a core turns out
+        # to have.
+        found = []
         for port in ps_core.ports.values():
-            if isinstance(port, ManagerPort):
-                for addr in port.addrmap.values():
-                    if addr["memtype"] == "memory":
-                        subord_port = port._addrmap_obj[addr["subord_port"]]
-                        dst_core = subord_port.parent()
-                        if isinstance(dst_core, Core):
-                            repr_dict[dst_core.hierarchy_name] = {}
-                            repr_dict[dst_core.hierarchy_name][
-                                "fullpath"
-                            ] = dst_core.hierarchy_name
-                            repr_dict[dst_core.hierarchy_name]["type"] = "DDR4"
-                            repr_dict[dst_core.hierarchy_name]["bdtype"] = None
-                            repr_dict[dst_core.hierarchy_name]["state"] = None
-                            repr_dict[dst_core.hierarchy_name][
-                                "addr_range"
-                            ] = subord_port.range
-                            repr_dict[dst_core.hierarchy_name][
-                                "phys_addr"
-                            ] = subord_port.baseaddr
-                            repr_dict[dst_core.hierarchy_name][
-                                "mem_id"
-                            ] = subord_port.name
-                            repr_dict[dst_core.hierarchy_name]["memtype"] = "MEMORY"
-                            repr_dict[dst_core.hierarchy_name]["gpio"] = {}
-                            repr_dict[dst_core.hierarchy_name]["interrupts"] = {}
-                            repr_dict[dst_core.hierarchy_name]["parameters"] = {}
-                            for param in dst_core.parameters.values():
-                                repr_dict[dst_core.hierarchy_name]["parameters"][
-                                    param.name
-                                ] = param.value
-                            repr_dict[dst_core.hierarchy_name]["registers"] = {}
-                            for reg in subord_port.registers.values():
-                                repr_dict[dst_core.hierarchy_name]["registers"][
-                                    reg.name
-                                ] = {}
-                                repr_dict[dst_core.hierarchy_name]["registers"][
-                                    reg.name
-                                ]["address_offset"] = reg.offset
-                                repr_dict[dst_core.hierarchy_name]["registers"][
-                                    reg.name
-                                ]["size"] = reg.width
-                                repr_dict[dst_core.hierarchy_name]["registers"][
-                                    reg.name
-                                ]["access"] = reg.access
-                                repr_dict[dst_core.hierarchy_name]["registers"][
-                                    reg.name
-                                ]["description"] = reg.description
-                                repr_dict[dst_core.hierarchy_name]["registers"][
-                                    reg.name
-                                ]["fields"] = {}
-                                for field in reg.bitfields.values():
-                                    repr_dict[dst_core.hierarchy_name]["registers"][
-                                        reg.name
-                                    ]["fields"][field.name] = {}
-                                    repr_dict[dst_core.hierarchy_name]["registers"][
-                                        reg.name
-                                    ]["fields"][field.name]["bit_offset"] = field.LSB
-                                    repr_dict[dst_core.hierarchy_name]["registers"][
-                                        reg.name
-                                    ]["fields"][field.name]["bit_width"] = (
-                                        field.MSB - field.LSB
-                                    ) + 1
-                                    repr_dict[dst_core.hierarchy_name]["registers"][
-                                        reg.name
-                                    ]["fields"][field.name][
-                                        "description"
-                                    ] = field.description
-                                    repr_dict[dst_core.hierarchy_name]["registers"][
-                                        reg.name
-                                    ]["fields"][field.name]["access"] = field.access
+            if not isinstance(port, ManagerPort):
+                continue
+            for key, addr in port.addrmap.items():
+                if addr["memtype"] != "memory":
+                    continue
+                subord_port = port._addrmap_obj[key]
+                dst_core = subord_port.parent()
+                if not isinstance(dst_core, Core):
+                    continue
+                baseaddr = addr.get("baseaddr")
+                addr_range = addr.get("addr_range")
+                if baseaddr is None:
+                    baseaddr = subord_port.baseaddr
+                if addr_range is None:
+                    addr_range = subord_port.range
+                found.append((dst_core, subord_port, addr, baseaddr, addr_range))
 
-                            repr_dict[dst_core.hierarchy_name]["used"] = 1
+        # Several routes and several controllers can describe one window, so
+        # group by address.
+        regions = {}
+        for entry in found:
+            dst_core, _, addr, baseaddr, addr_range = entry
+            key = (dst_core.hierarchy_name, baseaddr, addr_range)
+            if key not in regions or addr["block"] < regions[key][2]["block"]:
+                regions[key] = entry
+
+        per_core = {}
+        for core_name, _, _ in regions:
+            per_core[core_name] = per_core.get(core_name, 0) + 1
+
+        for dst_core, subord_port, addr, baseaddr, addr_range in regions.values():
+            # Only qualify the name when the core has more than one region.
+            name = dst_core.hierarchy_name
+            if per_core[name] > 1:
+                name = f"{name}/{addr['block']}"
+
+            repr_dict[name] = {}
+            repr_dict[name]["fullpath"] = dst_core.hierarchy_name
+            repr_dict[name]["type"] = "DDR4"
+            repr_dict[name]["bdtype"] = None
+            repr_dict[name]["state"] = None
+            repr_dict[name]["addr_range"] = addr_range
+            repr_dict[name]["phys_addr"] = baseaddr
+            repr_dict[name]["mem_id"] = subord_port.name
+            repr_dict[name]["memtype"] = "MEMORY"
+            repr_dict[name]["gpio"] = {}
+            repr_dict[name]["interrupts"] = {}
+            repr_dict[name]["parameters"] = {}
+            for param in dst_core.parameters.values():
+                repr_dict[name]["parameters"][param.name] = param.value
+            repr_dict[name]["registers"] = {}
+            for reg in subord_port.registers.values():
+                repr_dict[name]["registers"][reg.name] = {}
+                repr_dict[name]["registers"][reg.name]["address_offset"] = reg.offset
+                repr_dict[name]["registers"][reg.name]["size"] = reg.width
+                repr_dict[name]["registers"][reg.name]["access"] = reg.access
+                repr_dict[name]["registers"][reg.name][
+                    "description"
+                ] = reg.description
+                repr_dict[name]["registers"][reg.name]["fields"] = {}
+                for field in reg.bitfields.values():
+                    repr_dict[name]["registers"][reg.name]["fields"][field.name] = {}
+                    repr_dict[name]["registers"][reg.name]["fields"][field.name][
+                        "bit_offset"
+                    ] = field.LSB
+                    repr_dict[name]["registers"][reg.name]["fields"][field.name][
+                        "bit_width"
+                    ] = (field.MSB - field.LSB) + 1
+                    repr_dict[name]["registers"][reg.name]["fields"][field.name][
+                        "description"
+                    ] = field.description
+                    repr_dict[name]["registers"][reg.name]["fields"][field.name][
+                        "access"
+                    ] = field.access
+
+            repr_dict[name]["used"] = 1
 
         if self._first_run:
             self._first_run = False
