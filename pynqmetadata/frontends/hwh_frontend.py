@@ -106,6 +106,8 @@ def core_factory(module: ElementTree) -> Block:
             )
         )
 
+    core.expand_parameters()
+
     return core
 
 

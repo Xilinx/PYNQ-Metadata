@@ -82,6 +82,8 @@ def _block_factory(j: Dict) -> Block:
             param = Parameter(name=p["name"])
         core.add(param)
 
+    core.expand_parameters()
+
     for p in j["ports"].values():
         core.add(_port_factory(p))
 
