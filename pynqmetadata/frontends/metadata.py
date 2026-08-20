@@ -3,7 +3,6 @@
 
 import json
 import os
-from distutils.command.install_headers import install_headers
 from typing import Optional
 
 from pydantic import Field
