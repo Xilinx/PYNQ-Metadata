@@ -36,6 +36,9 @@ class ClockDictView:
                     repr_dict[i] = {}
                     repr_dict[i]["enable"] = int(core.find_clock_enable(i))
                     repr_dict[i]["frequency"] = core.find_clock_frequency(i)
+                    # Versal has a single divisor stage, Ultrascale has two.
+                    repr_dict[i]["divisor0"] = core.find_clock_divisor(i, 0)
+                    repr_dict[i]["src_sel"] = core.find_clock_select(i)
             elif isinstance(core, ProcSysCore):
                 for i in range(4):
                     repr_dict[i] = {}
