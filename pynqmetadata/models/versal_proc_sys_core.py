@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict
 
 from ..errors import ParameterNotFound
@@ -61,6 +61,16 @@ class VersalProcSysCore(ProcSysCore):
 
     type: str = "core-versal"
     ps_name: str = "versal_cips"
+    # PL to PS interrupts are one bit per port rather than a bus. Devices
+    # either expose one family, or split it by power domain with a different
+    # range for each. A design only carries the ports of its own family.
+    irq: Dict[str, object] = field(
+        default_factory=lambda: (
+            {f"pl_ps_irq{i}": ((116 + i, 1),) for i in range(16)}
+            | {f"pl_lpd_irq{i}": ((136 + i, 1),) for i in range(8)}
+            | {f"pl_fpd_irq{i}": ((175 + i, 1),) for i in range(8)}
+        )
+    )
 
     # Which parameter holds the packed configuration varies between boards and
     # cannot be told from the module type, so both are tried.

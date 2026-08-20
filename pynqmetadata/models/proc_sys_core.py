@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 from dataclasses import dataclass, field
@@ -137,6 +138,8 @@ class ProcSysCore(Core):
         """Returns the IRQ map for this PS in the same way that the legacy Pynq metadata is expecting"""
         raw_map: List[int] = []
         for irq in self.irq:
+            if irq not in self.ports:
+                continue
             for base, num in self.irq[irq]:
                 for i in range(num):
                     raw_map.append(base + i)
