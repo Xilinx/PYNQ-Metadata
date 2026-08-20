@@ -21,7 +21,6 @@ from ..models.metadata_extension import MetadataExtension
 from ..models.module import Module
 from ..models.parameter import Parameter
 from ..models.port import Port
-from ..models.proc_sys_core import ProcSysCore
 from ..models.register import Register
 from ..models.scalar_port import ScalarPort
 from ..models.signal import Signal
@@ -59,6 +58,36 @@ class BDNameExtension(MetadataExtension):
     )
 
 
+PROCESSING_SYSTEM_MODTYPES = {
+    "processing_system7": ZynqProcSysCore,
+    "zynq_ultra_ps_e": UltrascaleProcSysCore,
+    # Versal wraps the processing system in a configuration IP and describes
+    # the hard block in a separate handoff, so both are recognised.
+    "versal_cips": VersalProcSysCore,
+    "pspmc": VersalProcSysCore,
+    "ps_wizard": VersalProcSysCore,
+    "ps11": VersalProcSysCore,
+    "pmcps": VersalProcSysCore,
+}
+
+
+def _slave_interfaces(memrange: ElementTree) -> list:
+    """The subordinate interfaces a region is reachable through.
+
+    A NoC lists several, colon separated; everywhere else it is one."""
+    return [itf for itf in (memrange.get("SLAVEBUSINTERFACE") or "").split(":") if itf]
+
+
+def _memrange_bounds(memrange: ElementTree) -> tuple:
+    """The base address and size of an address region, or (None, None)"""
+    try:
+        base = int(memrange.get("BASEVALUE"), 16)
+        high = int(memrange.get("HIGHVALUE"), 16)
+    except (TypeError, ValueError):
+        return None, None
+    return base, (high - base) + 1
+
+
 def core_factory(module: ElementTree) -> Block:
     """
     Based on the elementTree module tags generate
@@ -75,16 +104,15 @@ def core_factory(module: ElementTree) -> Block:
     if fullname is not None:
         fullname = fullname.lstrip("/")
 
-    # Processing System
-    if (module.get("IS_PL") is not None) and module.get("IS_PL") == "FALSE":
-        if module.get("MODTYPE") == "zynq_ultra_ps_e":
-            core = UltrascaleProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
-        elif module.get("MODTYPE") == "processing_system7":
-            core = ZynqProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
-        elif module.get("MODTYPE") in ("versal_cips", "pspmc"):
-            core = VersalProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
-        else:
-            core = ProcSysCore(name=name, vlnv=vlnv, hierarchy_name=fullname)
+    # Processing System. Matched on MODTYPE because IS_PL is absent on some
+    # Versal wrappers, and not every block outside the PL is a processing
+    # system: AI Engine arrays and memory controllers are IP cores.
+    if module.get("MODTYPE") in PROCESSING_SYSTEM_MODTYPES:
+        core = PROCESSING_SYSTEM_MODTYPES[module.get("MODTYPE")](
+            name=name, vlnv=vlnv, hierarchy_name=fullname
+        )
+        # Several module types share a model, so report the one in the design.
+        core.ps_name = module.get("MODTYPE")
 
     # BDC
     elif module.get("BDTYPE") == "BLOCK_CONTAINER":
@@ -105,6 +133,8 @@ def core_factory(module: ElementTree) -> Block:
                 # hierarchy_name=fullname,
             )
         )
+
+    core.expand_parameters()
 
     return core
 
@@ -132,15 +162,9 @@ def port_factory(bus_itf: ElementTree) -> Port:
     btype: str = bus_itf.get("TYPE")
     vlnv = vlnv_creator(bus_itf.get("VLNV"))
 
-    # Memory mapped port
-    if vlnv.name == "aximm":
-        if determine_if_bus_driver(btype):
-            port = ManagerPort(name=name, vlnv=vlnv)
-        else:
-            port = SubordinatePort(name=name, vlnv=vlnv)
-
-    # Microblaze LMB
-    elif vlnv.name == "lmb":
+    # Memory mapped ports: AXI, the Microblaze local memory bus, and the
+    # inter-NoC interface.
+    if vlnv.name in ("aximm", "lmb", "inimm"):
         if determine_if_bus_driver(btype):
             port = ManagerPort(name=name, vlnv=vlnv)
         else:
@@ -453,19 +477,21 @@ class HwhFrontend(Module):
         """
         for i in self._root.iter("MEMRANGE"):
             if i.get("MEMTYPE") == "REGISTER" or i.get("MEMTYPE") == "MEMORY":
-                
-                if isinstance(self, Module) and (i.get("INSTANCE") in self.ports): 
-                    port = self.ports[i.get("INSTANCE")] 
+
+                if isinstance(self, Module) and (i.get("INSTANCE") in self.ports):
+                    ports = [self.ports[i.get("INSTANCE")]]
                 else:
                     core = self.blocks[i.get("INSTANCE")]
-                    slave_itf = i.get("SLAVEBUSINTERFACE")
-                    if slave_itf not in core.ports:
-                        continue
-                    port = core.ports[slave_itf]
+                    ports = [
+                        core.ports[itf]
+                        for itf in _slave_interfaces(i)
+                        if itf in core.ports
+                    ]
 
-                if isinstance(port, SubordinatePort):
-                    port.baseaddr = int(i.get("BASEVALUE"), 16)
-                    port.range = (int(i.get("HIGHVALUE"), 16) - port.baseaddr) + 1
+                for port in ports:
+                    if isinstance(port, SubordinatePort):
+                        port.baseaddr = int(i.get("BASEVALUE"), 16)
+                        port.range = (int(i.get("HIGHVALUE"), 16) - port.baseaddr) + 1
 
     def _populate_subordinate_regmap(self) -> None:
         """
@@ -566,33 +592,25 @@ class HwhFrontend(Module):
         for i in self._root.iter("MODULE"):
             core = self.blocks[i.get("INSTANCE")]
             for mem in i.iter("MEMRANGE"):
-                try:  # Port might not exist if there is a hole into a BDC/RPD
-                    master_port = core.ports[mem.get("MASTERBUSINTERFACE")]
-                    subord_port = self.blocks[mem.get("INSTANCE")].ports[
-                        mem.get("SLAVEBUSINTERFACE")
-                    ]
-                    memtype = mem.get("MEMTYPE").lower()
-                    if isinstance(master_port, ManagerPort) and isinstance(
-                        subord_port, SubordinatePort
-                    ):
+                # Skip processor memory maps that name no master, and
+                # targets outside this design.
+                master_port = core.ports.get(mem.get("MASTERBUSINTERFACE"))
+                target = self.blocks.get(mem.get("INSTANCE"))
+                if not isinstance(master_port, ManagerPort) or target is None:
+                    continue
 
-                        master_port.addrmap_add(
-                            mem.get("ADDRESSBLOCK"), memtype, subord_port
-                        )
-                        # addrmap = AddressMap(
-                        #    name=f"{master_port.ref}_{subord_port.ref}",
-                        #    block=mem.get("ADDRESSBLOCK"),
-                        #    subord_port_obj=subord_port,
-                        #    subord_port=subord_port.ref,
-                        #    memtype=memtype,
-                        # )
-                        # master_port.addrmap_add(addrmap)
-                    else:
-                        raise RuntimeError(
-                            f"Expected {master_port.ref} to be a manger and {subord_port.ref} to be a subordinate port"
-                        )
-                except:
-                    pass
+                baseaddr, addr_range = _memrange_bounds(mem)
+                for itf in _slave_interfaces(mem):
+                    subord_port = target.ports.get(itf)
+                    if not isinstance(subord_port, SubordinatePort):
+                        continue
+                    master_port.addrmap_add(
+                        mem.get("ADDRESSBLOCK"),
+                        mem.get("MEMTYPE").lower(),
+                        subord_port,
+                        baseaddr=baseaddr,
+                        addr_range=addr_range,
+                    )
 
     def resolve_addressing(self) -> None:
         """

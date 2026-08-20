@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import copy
@@ -82,10 +83,12 @@ class RuntimeMetadataParser:
         )
         self.refresh_hierarchy_dict()
 
-        # Remove any duplicates in ip_dict and mem_dict
-        for item in self.mem_dict:
-            if item in self.ip_dict:
-                del self.ip_dict[item]
+        # Remove any duplicates in ip_dict and mem_dict. Match on the core,
+        # since a memory may be keyed by region.
+        for mem in self.mem_dict.values():
+            fullpath = mem.get("fullpath")
+            if fullpath in self.ip_dict:
+                del self.ip_dict[fullpath]
 
     def refresh_hierarchy_dict(self) -> None:
         self.hierarchy_dict = copy.deepcopy(self.hierarchy_dict_view.view)
