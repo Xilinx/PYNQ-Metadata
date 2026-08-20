@@ -85,7 +85,7 @@ setup(  name='pynqmetadata',
         author_email='pynq_support@xilinx.com',
         packages=find_packages(),
         install_requires=required,
-        python_requires='>=3.8',
+        python_requires='>=3.10',
         package_data = {
             'pynqmetadata': pynq_metadata_files,
             },
