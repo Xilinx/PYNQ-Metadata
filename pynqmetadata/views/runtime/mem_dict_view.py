@@ -11,6 +11,19 @@ from pynqmetadata.errors import MetadataObjectNotFound
 from .metadata_view import MetadataView
 
 
+# Interfaces that name the memory technology a controller fronts.
+MEMORY_INTERFACES = ("ddr4", "ddr5", "lpddr4", "lpddr5", "hbm", "bram")
+
+
+def _memory_type(core: Core) -> str:
+    """The memory technology, taken from the interface facing the memory."""
+    for port in core.ports.values():
+        vlnv = getattr(port, "vlnv", None)
+        if vlnv is not None and vlnv.name in MEMORY_INTERFACES:
+            return vlnv.name.upper()
+    return core.vlnv.name.upper() if core.vlnv is not None else "UNKNOWN"
+
+
 class DummyHwhParser:
     def __init__(self, mem_dict):
         self.mem_dict = mem_dict
@@ -84,7 +97,7 @@ class MemDictView(MetadataView):
 
             repr_dict[name] = {}
             repr_dict[name]["fullpath"] = dst_core.hierarchy_name
-            repr_dict[name]["type"] = "DDR4"
+            repr_dict[name]["type"] = _memory_type(dst_core)
             repr_dict[name]["bdtype"] = None
             repr_dict[name]["state"] = None
             repr_dict[name]["addr_range"] = addr_range
