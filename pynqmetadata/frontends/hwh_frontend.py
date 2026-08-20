@@ -111,6 +111,8 @@ def core_factory(module: ElementTree) -> Block:
         core = PROCESSING_SYSTEM_MODTYPES[module.get("MODTYPE")](
             name=name, vlnv=vlnv, hierarchy_name=fullname
         )
+        # Several module types share a model, so report the one in the design.
+        core.ps_name = module.get("MODTYPE")
 
     # BDC
     elif module.get("BDTYPE") == "BLOCK_CONTAINER":

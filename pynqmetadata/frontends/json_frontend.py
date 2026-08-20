@@ -75,6 +75,9 @@ def _block_factory(j: Dict) -> Block:
     else:
         core = IPCore(name=j["name"], vlnv=vlnv, hierarchy_name=j["hierarchy_name"])
 
+    if "ps_name" in j and hasattr(core, "ps_name"):
+        core.ps_name = j["ps_name"]
+
     for p in j["parameters"].values():
         if "value" in p:
             param = Parameter(name=p["name"], value=p["value"])
