@@ -103,6 +103,10 @@ class VersalProcSysCore(ProcSysCore):
         """Returns the name of the PL clock frequency parameter for given clk_id."""
         return f"PMC_CRP_PL{clk_id}_REF_CTRL_FREQMHZ"
 
+    def clk_src_sel_param_name(self, clk_id: int) -> str:
+        """Returns the name of the PL clock source parameter for this PS"""
+        return f"PMC_CRP_PL{clk_id}_REF_CTRL_SRCSEL"
+
     def find_clock_frequency(self, clk_id: int) -> float:
         """For a given clock id return the PL clock frequency in MHz.
 
