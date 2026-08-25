@@ -108,11 +108,10 @@ class VersalProcSysCore(ProcSysCore):
         return f"PMC_CRP_PL{clk_id}_REF_CTRL_SRCSEL"
 
     def find_clock_frequency(self, clk_id: int) -> float:
-        """For a given clock id return the PL clock frequency in MHz.
+        """Return the requested PL clock frequency in MHz (FREQMHZ).
 
-        Versal PL clocks are requested by frequency and the divisors are
-        worked out by the tools, so the frequency is recorded directly
-        rather than being derived from a divisor and a PLL source.
+        Versal stores target frequency in metadata alongside DIVISOR0 and
+        SRCSEL. Zynq/Ultrascale derive frequency from divisors instead.
         """
         clk_freq = self.clk_freq_param_name(clk_id)
         if clk_freq in self.parameters:
