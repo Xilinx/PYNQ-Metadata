@@ -4,7 +4,6 @@
 from dataclasses import dataclass, field
 from typing import Dict
 
-from ..errors import ParameterNotFound
 from .parameter import Parameter
 from .proc_sys_core import ProcSysCore
 
@@ -101,28 +100,8 @@ class VersalProcSysCore(ProcSysCore):
 
     def clk_freq_param_name(self, clk_id: int) -> str:
         """Returns the name of the PL clock frequency parameter for given clk_id."""
-        return f"PMC_CRP_PL{clk_id}_REF_CTRL_FREQMHZ"
+        return f"PMC_CRP_PL{clk_id}_REF_CTRL_ACT_FREQMHZ"
 
     def clk_src_sel_param_name(self, clk_id: int) -> str:
         """Returns the name of the PL clock source parameter for this PS"""
         return f"PMC_CRP_PL{clk_id}_REF_CTRL_SRCSEL"
-
-    def find_clock_frequency(self, clk_id: int) -> float:
-        """Return the requested PL clock frequency in MHz (FREQMHZ).
-
-        Versal stores target frequency in metadata alongside DIVISOR0 and
-        SRCSEL. Zynq/Ultrascale derive frequency from divisors instead.
-        """
-        clk_freq = self.clk_freq_param_name(clk_id)
-        if clk_freq in self.parameters:
-            frequency = self.parameters[clk_freq].value
-            if frequency is not None:
-                return float(frequency)
-            else:
-                raise ValueError(
-                    f"Clock frequency {clk_freq} for ps {self.ref} has no value"
-                )
-        else:
-            raise ParameterNotFound(
-                f"Unable to find a clock frequency {clk_freq} for ps {self.ref}"
-            )

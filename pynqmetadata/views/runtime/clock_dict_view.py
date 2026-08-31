@@ -20,7 +20,8 @@ class ClockDictView:
     the key is the index for the clock and the values contain:
         * 'enable' : int whether the clock is enabled
         * 'divisor0' : int divisor value for the clock
-        * 'divisor1' : int divisor value for the clock
+        * 'divisor1' : int divisor value for the clock, not on Versal
+        * 'frequency' : float the rate the design achieved in MHz, or None
     """
 
     def __init__(self, module: Module) -> None:
@@ -43,6 +44,7 @@ class ClockDictView:
                 for i in range(4):
                     repr_dict[i] = {}
                     repr_dict[i]["enable"] = int(core.find_clock_enable(i))
+                    repr_dict[i]["frequency"] = core.find_clock_frequency(i)
                     for j in range(2):
                         repr_dict[i][f"divisor{j}"] = core.find_clock_divisor(i, j)
                     repr_dict[i]["src_sel"] = core.find_clock_select(i)
