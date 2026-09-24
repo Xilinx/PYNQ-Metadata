@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
@@ -50,6 +51,9 @@ class InterruptControllersView(MetadataView):
             idx = self._base_idx
 
         for dst in sig._connections.values():
+            # An interrupt can leave the design through a module boundary.
+            if not isinstance(dst.parent().parent(), Core):
+                continue
             if dst.parent().parent().vlnv.name == "axi_intc":
                 dst.parent().parent().ext[
                     "interrupt_controller_index"

@@ -1,4 +1,5 @@
-# Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 Xilinx, Inc.
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 from __future__ import annotations
@@ -129,6 +130,14 @@ class Block(MetadataObject):
             raise UnexpectedPmdObject(
                 f"unable to add {item} to {self.ref} was expecting either a parameter or a port"
             )
+
+    def expand_parameters(self) -> None:
+        """Derives any further parameters implied by the ones already added.
+
+        Does nothing by default. Overridden where the tools pack several
+        settings into a single parameter instead of emitting a tag for each.
+        Called once the parameters have been populated."""
+        return
 
     def _update_parents_base(self) -> None:
         """Walks down through the module and makes sure all parent references are accurate

@@ -1,8 +1,9 @@
 # Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from ..errors import ParameterNotFound, UnexpectedMetadataObjectType
 from .core import Core
@@ -86,6 +87,26 @@ class ProcSysCore(Core):
         Default is the same format as Ultrascale."""
         return f"PSU__CRL_APB__PL{clk_id}_REF_CTRL__DIVISOR{div_id}"
 
+    def clk_freq_param_name(self, clk_id: int) -> str:
+        """Returns the name of the clock frequency parameter for this PS.
+        Default is the same format as Ultrascale."""
+        return f"PSU__CRL_APB__PL{clk_id}_REF_CTRL__ACT_FREQMHZ"
+
+    def find_clock_frequency(self, clk_id: int) -> Optional[float]:
+        """For a given clock id return the frequency the design achieved in
+        MHz, or None where the design records none.
+
+        This is the rate the tools met, not the one the user asked for; the
+        two differ whenever the request was not satisfiable, and it is the
+        achieved one the PL was timed against.
+        """
+        clk_freq = self.clk_freq_param_name(clk_id)
+        if clk_freq in self.parameters:
+            frequency = self.parameters[clk_freq].value
+            if frequency is not None:
+                return float(frequency)
+        return None
+
     def find_clock_divisor(self, clk_id: int, div_id: int) -> int:
         """For a given clock id and divisor id return the clock divisor"""
         clk_odiv = self.clk_div_param_name(clk_id, div_id)
@@ -137,6 +158,8 @@ class ProcSysCore(Core):
         """Returns the IRQ map for this PS in the same way that the legacy Pynq metadata is expecting"""
         raw_map: List[int] = []
         for irq in self.irq:
+            if irq not in self.ports:
+                continue
             for base, num in self.irq[irq]:
                 for i in range(num):
                     raw_map.append(base + i)

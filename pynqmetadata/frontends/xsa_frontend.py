@@ -1,4 +1,5 @@
-# Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 Xilinx, Inc.
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 from .hwh_frontend import HwhFrontend
@@ -20,6 +21,8 @@ def XsaFrontend(input: str) -> MetadataObject:
     """
     from pynqutils.build_utils import XsaParser
     xsa = XsaParser(input)
+    # load_bdc_metadata name-matches the default HWH to the primary device image
+    # (.bit or Versal .pdi). Requires pynqutils>=0.1.3 for PDI support.
     xsa.load_bdc_metadata()
     md = HwhFrontend(_hwhfile=xsa.defaultHwhPaths[0])
     md.ext["xsa"] = XsaObjectExtension(xsa=xsa)

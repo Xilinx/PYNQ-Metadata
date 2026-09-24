@@ -1,4 +1,5 @@
-# Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 Xilinx, Inc.
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
@@ -22,6 +23,7 @@ from ..models.signal import Signal
 from ..models.stream_port import StreamPort
 from ..models.subordinate_port import SubordinatePort
 from ..models.ultrascale_proc_sys_core import UltrascaleProcSysCore
+from ..models.versal_proc_sys_core import VersalProcSysCore
 from ..models.vlnv import Vlnv
 from ..models.zynq_proc_sys_core import ZynqProcSysCore
 from ..models.clk_port import ClkPort
@@ -62,6 +64,10 @@ def _block_factory(j: Dict) -> Block:
         core = UltrascaleProcSysCore(
             name=j["name"], vlnv=vlnv, hierarchy_name=j["hierarchy_name"]
         )
+    elif j["type"] == "core-versal":
+        core = VersalProcSysCore(
+            name=j["name"], vlnv=vlnv, hierarchy_name=j["hierarchy_name"]
+        )
     elif j["type"] == "core-dfx":
         core = DFXCore(name=j["name"], vlnv=vlnv, hierarchy_name=j["hierarchy_name"])
     elif j["type"] == "module":
@@ -69,12 +75,17 @@ def _block_factory(j: Dict) -> Block:
     else:
         core = IPCore(name=j["name"], vlnv=vlnv, hierarchy_name=j["hierarchy_name"])
 
+    if "ps_name" in j and hasattr(core, "ps_name"):
+        core.ps_name = j["ps_name"]
+
     for p in j["parameters"].values():
         if "value" in p:
             param = Parameter(name=p["name"], value=p["value"])
         else:
             param = Parameter(name=p["name"])
         core.add(param)
+
+    core.expand_parameters()
 
     for p in j["ports"].values():
         core.add(_port_factory(p))
