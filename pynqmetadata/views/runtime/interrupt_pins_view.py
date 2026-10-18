@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022-2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
@@ -39,12 +40,12 @@ class InterruptPinsView(MetadataView):
 
     def __init__(self, module: Module, controllers) -> None:
         super().__init__(module=module)
-        self._controllers = controllers
+        blocks = {block.hierarchy_name: block for block in self._md.blocks.values()}
+        self._controllers = [blocks[name] for name in controllers]
         self._base_idx: int = 0
 
         pins = []
-        for ctrler_name in self._controllers:
-            irq_controller = self._md.blocks[ctrler_name]
+        for irq_controller in self._controllers:
             if "intr" in irq_controller.ports:
                 pins = pins + self._walk_for_irq_pins(
                     irq_controller.ports["intr"].sig()
@@ -93,9 +94,8 @@ class InterruptPinsView(MetadataView):
         repr_dict = {}
         self._base_idx = 0
 
-        for ctrler_name in self._controllers:
+        for irq_controller in self._controllers:
             pins = []
-            irq_controller = self._md.blocks[ctrler_name]
             if "intr" in irq_controller.ports:
                 pins = pins + self._walk_for_irq_pins(
                     irq_controller.ports["intr"].sig()
