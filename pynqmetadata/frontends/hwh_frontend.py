@@ -10,7 +10,7 @@ import warnings
 
 from pydantic import Field
 
-from ..errors import ExpectedSignalType, PortNotFound, UnexpectedPortTypeError
+from ..errors import ExpectedSignalType, MetadataObjectNotFound, PortNotFound, UnexpectedPortTypeError
 from ..models.bit_field import BitField
 from ..models.block import Block
 from ..models.core import Core
@@ -680,9 +680,14 @@ class HwhFrontend(Module):
                                 f"{dst_portname}[port]:{dst_signame}[signal]"
                             )
                         else:
-                            dst_signal = dst_core.lookup(
-                                f"{c_dst}[port]:{c_dst}[signal]"
-                            )
+                            try:
+                                dst_signal = dst_core.lookup(
+                                    f"{c_dst}[port]:{c_dst}[signal]"
+                                )
+                            except MetadataObjectNotFound:
+                                # Vivado can list a connection to a port it omits
+                                # from the module, e.g. a tied-off stream TLAST.
+                                continue
 
                     if isinstance(signal, Signal) and isinstance(dst_signal, Signal):
                         signal.connect(dst_signal)
