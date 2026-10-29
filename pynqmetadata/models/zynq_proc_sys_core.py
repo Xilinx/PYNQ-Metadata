@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022-2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 from dataclasses import dataclass, field
@@ -25,6 +26,10 @@ class ZynqProcSysCore(ProcSysCore):
     def clk_div_param_name(self, clk_id: int, div_id: int) -> str:
         """Returns the name of the clock div parameters for this PS"""
         return f"PCW_FCLK{clk_id}_PERIPHERAL_DIVISOR{div_id}"
+
+    def clk_freq_param_name(self, clk_id: int) -> str:
+        """Returns the name of the PL clock frequency parameter for given clk_id."""
+        return f"PCW_ACT_FPGA{clk_id}_PERIPHERAL_FREQMHZ"
 
     def clk_enable_param_name(self, clk_id: int) -> str:
         """Returns the parameter for the clock enable for clock with ID clk_id on this PS"""

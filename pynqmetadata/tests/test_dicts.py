@@ -62,3 +62,6 @@ def test_resizer_interrupt_controllers_correct():
 
 def test_resizer_interrupt_pins_correct():
     _dict_comparer(rt_md.interrupt_pins, os.path.join('resizer','interrupt_pins_golden.json'))
+
+def test_resizer_clock_frequency():
+    assert rt_md.clock_dict[0]["frequency"] == 100.0
