@@ -585,6 +585,35 @@ class HwhFrontend(Module):
                                 f"{port.name} is not a SubordinatePort but we are trying to assign it a regmap"
                             )
 
+    def _external_target(
+        self, instance: str, baseaddr: int, addr_range: int
+    ) -> Optional[Block]:
+        """
+        Some designs route a manager port straight through one of this
+        design's own external ports into logic that isn't described
+        anywhere in this HWH (e.g. CASPER designs, whose logic sits
+        outside IP Integrator). Represent that destination as a black
+        box so the address range is still reported.
+        """
+        ext_port = self.ports.get(instance)
+        if not isinstance(ext_port, ManagerPort) or not ext_port.external:
+            return None
+
+        if instance not in self.blocks:
+            core = IPCore(
+                name=instance,
+                hierarchy_name=instance,
+                vlnv=Vlnv(
+                    vendor="extern", library="extern", name="blackbox", version=(1, 0)
+                ),
+            )
+            subord_port = SubordinatePort(name=instance, vlnv=ext_port.vlnv)
+            subord_port.baseaddr = baseaddr
+            subord_port.range = addr_range
+            core.add(subord_port)
+            self.add(core)
+        return self.blocks[instance]
+
     def _resolve_manager_address_maps(self) -> None:
         """
         For all the manager ports resolve their address spaces
@@ -592,14 +621,20 @@ class HwhFrontend(Module):
         for i in self._root.iter("MODULE"):
             core = self.blocks[i.get("INSTANCE")]
             for mem in i.iter("MEMRANGE"):
-                # Skip processor memory maps that name no master, and
-                # targets outside this design.
+                # Skip processor memory maps that name no master. Targets
+                # outside this design are represented with a placeholder
+                # core if they lead out through one of our external ports.
                 master_port = core.ports.get(mem.get("MASTERBUSINTERFACE"))
-                target = self.blocks.get(mem.get("INSTANCE"))
-                if not isinstance(master_port, ManagerPort) or target is None:
+                if not isinstance(master_port, ManagerPort):
                     continue
 
                 baseaddr, addr_range = _memrange_bounds(mem)
+                target = self.blocks.get(mem.get("INSTANCE")) or self._external_target(
+                    mem.get("INSTANCE"), baseaddr, addr_range
+                )
+                if target is None:
+                    continue
+
                 for itf in _slave_interfaces(mem):
                     subord_port = target.ports.get(itf)
                     if not isinstance(subord_port, SubordinatePort):
