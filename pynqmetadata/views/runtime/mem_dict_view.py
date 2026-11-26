@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
-# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
+# Copyright (C) 2022-2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
@@ -102,6 +102,8 @@ class MemDictView(MetadataView):
             repr_dict[name]["state"] = None
             repr_dict[name]["addr_range"] = addr_range
             repr_dict[name]["phys_addr"] = baseaddr
+            repr_dict[name]["base_address"] = baseaddr
+            repr_dict[name]["size"] = addr_range
             repr_dict[name]["mem_id"] = subord_port.name
             repr_dict[name]["memtype"] = "MEMORY"
             repr_dict[name]["gpio"] = {}
