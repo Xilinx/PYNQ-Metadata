@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
-# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
+# Copyright (C) 2022-2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
@@ -19,6 +19,10 @@ def _memory_type(core: Core) -> str:
     """The memory technology, taken from the interface facing the memory."""
     for port in core.ports.values():
         vlnv = getattr(port, "vlnv", None)
+        if vlnv is not None and vlnv.name == "ddrx":
+            memory_type = core.parameters.get("MEM_TYPE")
+            if memory_type is not None:
+                return str(memory_type.value).upper()
         if vlnv is not None and vlnv.name in MEMORY_INTERFACES:
             return vlnv.name.upper()
     return core.vlnv.name.upper() if core.vlnv is not None else "UNKNOWN"
@@ -37,8 +41,9 @@ class MemDictView(MetadataView):
     such as the XRT allocation information for each memory.
     """
 
-    def __init__(self, module: Module) -> None:
+    def __init__(self, module: Module, *, manager=None) -> None:
         super().__init__(module=module)
+        self._manager = manager
         self._first_run = True
         self._created_xclbin = {}
         self._psddr_cache = {}
@@ -52,6 +57,8 @@ class MemDictView(MetadataView):
             if isinstance(core, ProcSysCore):
                 ps_core = core
 
+        if self._manager is not None:
+            ps_core = self._manager
         if ps_core is None:
             raise MetadataObjectNotFound(f"Unable to find a PS in {self._md.ref}")
 
@@ -136,6 +143,8 @@ class MemDictView(MetadataView):
 
             repr_dict[name]["used"] = 1
 
+        if self._manager is not None:
+            return repr_dict
         if self._first_run:
             self._first_run = False
         else:

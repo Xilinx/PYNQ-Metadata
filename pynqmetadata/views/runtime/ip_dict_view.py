@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Xilinx, Inc
+# Copyright (C) 2022 - 2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
@@ -29,9 +30,10 @@ class IpDictView(MetadataView):
                ‘parameters’ : dict, ‘registers’: dict, ‘state’ : str}}
     """
 
-    def __init__(self, module: Module, submodule: bool = False) -> None:
+    def __init__(self, module: Module, submodule: bool = False, *, manager=None) -> None:
         super().__init__(module=module)
         self._is_submodule = submodule
+        self._manager = manager
 
     def get_ps(self) -> ProcSysCore:
         """Gets a reference to the PS core for this design"""
@@ -55,10 +57,13 @@ class IpDictView(MetadataView):
     def view(self) -> Dict:
         repr_dict = {}
 
-        ps = self.get_ps()
+        ps = self._manager if self._manager is not None else self.get_ps()
         for port in ps.ports.values():
             if isinstance(port, ManagerPort):
                 for sp_ref in port.addrmap:
+                    mapping = port.addrmap[sp_ref]
+                    if self._manager is not None and mapping["memtype"] != "register":
+                        continue
                     target_port = port._addrmap_obj[sp_ref]
                     dparent = target_port.parent()
 
@@ -91,6 +96,20 @@ class IpDictView(MetadataView):
                                             dst_port = p
 
                     if dcore is not None:
+                        base_address = dst_port.baseaddr
+                        address_range = dst_port.range
+                        if self._manager is not None:
+                            if mapping["baseaddr"] is not None:
+                                base_address = mapping["baseaddr"]
+                            if mapping["addr_range"] is not None:
+                                address_range = mapping["addr_range"]
+                        if self._manager is not None and dcore.hierarchy_name in repr_dict:
+                            previous = repr_dict[dcore.hierarchy_name]
+                            if (previous["phys_addr"], previous["addr_range"], previous["mem_id"]) == (
+                                base_address, address_range, dst_port.name
+                            ):
+                                continue
+                            raise ValueError(f"Multiple register windows for {dcore.hierarchy_name}")
                         repr_dict[dcore.hierarchy_name] = {}
 
                         # Special case the vlvn for empty BDC modules
@@ -179,15 +198,14 @@ class IpDictView(MetadataView):
                                     ]["fields"][f.name]["description"] = f.description
                             repr_dict[dcore.hierarchy_name]["state"] = None
                             repr_dict[dcore.hierarchy_name]["bdtype"] = None
-                            repr_dict[dcore.hierarchy_name][
-                                "phys_addr"
-                            ] = dst_port.baseaddr
-                            repr_dict[dcore.hierarchy_name][
-                                "addr_range"
-                            ] = dst_port.range
+                            repr_dict[dcore.hierarchy_name]["phys_addr"] = base_address
+                            repr_dict[dcore.hierarchy_name]["addr_range"] = address_range
                             repr_dict[dcore.hierarchy_name][
                                 "fullpath"
                             ] = dcore.hierarchy_name
+
+        if self._manager is not None:
+            return repr_dict
 
         repr_dict[ps.hierarchy_name] = {}
         repr_dict[ps.hierarchy_name]["type"] = ps.vlnv.str

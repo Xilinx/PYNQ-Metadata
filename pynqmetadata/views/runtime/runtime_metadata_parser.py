@@ -33,9 +33,14 @@ class RuntimeMetadataParser:
     Views are dynamically updated as the underlying metadata is changed.
     However, this is not currently fully supported in the latest release of PYNQ, so one time
     deep copies of these dictionaries are made. 
+
+    ``manager`` selects the core whose AXI address space is exposed. It is
+    required for designs without a processing system; the default preserves
+    the processing-system address space.
+    PS clocks, GPIO and interrupts are exposed only when the PS is selected.
     """
 
-    def __init__(self, md: Module) -> None:
+    def __init__(self, md: Module, *, manager=None) -> None:
         self.md = md
 
         # Check to see if there is an XSA parser associated with the metadata
@@ -50,26 +55,33 @@ class RuntimeMetadataParser:
         self.dtbo_data = None
         self.systemgraph = self.md
         ps_blocks = md.get_processing_systems()
-        self.ps = ps_blocks[list(ps_blocks.keys())[0]]
-        self.ps_name = self.ps.hierarchy_name
-        self.family_ps = self.ps.ps_name
+        self.ps = next(iter(ps_blocks.values()), None)
+        if self.ps is None and manager is None:
+            raise ValueError("A design without a processing system requires an AXI manager")
+        self.ps_name = self.ps.hierarchy_name if self.ps is not None else None
+        self.family_ps = self.ps.ps_name if self.ps is not None else None
+        ps_selected = self.ps is not None and (manager is None or manager is self.ps)
+        if manager is not None:
+            self.partial = False
 
         self.interrupt_controllers_view = InterruptControllersView(self.md)
-        self.interrupt_controllers = copy.deepcopy(self.interrupt_controllers_view.view)
+        self.interrupt_controllers = (
+            copy.deepcopy(self.interrupt_controllers_view.view) if ps_selected else {}
+        )
 
         self.interrupt_pins_view = InterruptPinsView(self.md, self.interrupt_controllers)
         self.interrupt_pins = copy.deepcopy(self.interrupt_pins_view.view)
 
-        self.ip_dict_view = IpDictView(self.md)
+        self.ip_dict_view = IpDictView(self.md, manager=manager)
         self.ip_dict = copy.deepcopy(self.ip_dict_view.view)
 
         self.gpio_dict_view = GpioDictView(self.md)
-        self.gpio_dict = copy.deepcopy(self.gpio_dict_view.view)
+        self.gpio_dict = copy.deepcopy(self.gpio_dict_view.view) if ps_selected else {}
 
         self.clock_dict_view = ClockDictView(self.md)
-        self.clock_dict = copy.deepcopy(self.clock_dict_view.clock_dict)
+        self.clock_dict = copy.deepcopy(self.clock_dict_view.clock_dict) if ps_selected else {}
 
-        self.mem_dict_view = MemDictView(self.md)
+        self.mem_dict_view = MemDictView(self.md, manager=manager)
         self.mem_dict = copy.deepcopy(self.mem_dict_view.view)
 
         self.hierarchy_dict_view = HierarchyDictView(
