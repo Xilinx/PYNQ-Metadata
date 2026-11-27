@@ -70,7 +70,7 @@ class RuntimeMetadataParser:
         )
 
         self.interrupt_pins_view = InterruptPinsView(self.md, self.interrupt_controllers)
-        self.interrupt_pins = copy.deepcopy(self.interrupt_pins_view.view)
+        self.interrupt_pins = copy.deepcopy(self.interrupt_pins_view.view) if ps_selected else {}
 
         self.ip_dict_view = IpDictView(self.md, manager=manager)
         self.ip_dict = copy.deepcopy(self.ip_dict_view.view)
