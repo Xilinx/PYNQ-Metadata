@@ -2,120 +2,33 @@
 # Copyright (C) 2022-2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
-import json
-import re
-from typing import Dict, List
-
 from pydantic import Field
-from pynqmetadata import Core, MetadataExtension, Module, Signal
+from pynqmetadata import MetadataExtension
+
+from .interrupt_controllers_view import _interrupt_metadata
 from .metadata_view import MetadataView
 
 
 class InterruptIndex(MetadataExtension):
-    index: int = Field(
-        ...,
-        description="The interrupt index that this pin is associated with in the PYNQ runtime",
-    )
-    controller: str = Field(
-        default="unknown",
-        description="The name of the interrupt controller for this interrupt pin",
-    )
-
-
-def _default_repr(obj):
-    return repr(obj)
+    index: int = Field(..., description="The interrupt input index")
+    controller: str = Field(default="unknown", description="The parent interrupt controller")
 
 
 class InterruptPinsView(MetadataView):
-    """
-    Provides a view onto the metadata object that displays all
-    the AXI interrupt controllers in the system that are 
-    attached to the Processing System interrupt line.
+    """Interrupt pins connected to the processing system or AXI controllers."""
 
-    Models a dictionary where the Key is the name of the
-    interrupt pin and each entry contains:
-        * a reference to the parent controller : str
-        * an index : int
-    """
-
-    def __init__(self, module: Module, controllers) -> None:
+    def __init__(self, module, controllers):
         super().__init__(module=module)
-        blocks = {block.hierarchy_name: block for block in self._md.blocks.values()}
-        self._controllers = [blocks[name] for name in controllers]
-        self._base_idx: int = 0
-
-        pins = []
-        for irq_controller in self._controllers:
-            if "intr" in irq_controller.ports:
-                pins = pins + self._walk_for_irq_pins(
-                    irq_controller.ports["intr"].sig()
-                )
-
-            for irq_pin in pins:
-                irq_pin.ext[
-                    "interrupt_index"
-                ].controller = irq_controller.hierarchy_name
-
-    def _walk_for_irq_pins(self, sig: Signal) -> List[Signal]:
-        """From and interrupt controller walk over connected concat blocks to
-        get all the pins that are connected"""
-        ret: List[Signal] = []
-
-        if sig.parent().parent().vlnv.name == "xlconcat":
-            idx_re = re.search("In([0-9]+)", sig.name)
-            if len(idx_re.groups()) == 1:
-                # idx = int(idx_re.group(1)) + self._base_idx
-                idx = self._base_idx
-            else:
-                raise ValueError(
-                    f"Trying to infer an interrupt index from the port name for {sig.ref} but it does not match the expected format signame={sig.name} groups={idx_re.groups()}"
-                )
-        else:
-            idx = self._base_idx
-
-        for dst in sig._connections.values():
-            if isinstance(dst.parent().parent(), Core):
-                if dst.parent().parent().vlnv.name == "xlconcat":
-                    concat = dst.parent().parent()
-                    for port in concat.ports.values():
-                        if port.name != "dout":
-                            sig = port.sig()
-                            ret = ret + self._walk_for_irq_pins(sig)
-                else:
-                    sig.ext["interrupt_index"] = InterruptIndex(index=idx)
-                    dst.ext["interrupt_index"] = InterruptIndex(index=idx)
-                    self._base_idx = self._base_idx + 1
-                    ret.append(dst)
-                    ret.append(sig)
-        return ret
+        self._state = {}
 
     @property
-    def view(self) -> Dict:
-        repr_dict = {}
-        self._base_idx = 0
+    def view(self):
+        _, pins, signals = _interrupt_metadata(self._md)
+        for path, entry in pins.items():
+            signals[path].ext["interrupt_index"] = InterruptIndex(
+                index=entry["index"], controller=entry["controller"]
+            )
+        return pins
 
-        for irq_controller in self._controllers:
-            pins = []
-            if "intr" in irq_controller.ports:
-                pins = pins + self._walk_for_irq_pins(
-                    irq_controller.ports["intr"].sig()
-                )
-
-            for irq_pin in pins:
-                full_path = f"{irq_pin.parent().parent().hierarchy_name}/{irq_pin.name}"
-                repr_dict[full_path] = {}
-                repr_dict[full_path]["controller"] = irq_controller.hierarchy_name
-                if "interrupt_index" in irq_pin.ext:
-                    repr_dict[full_path]["index"] = irq_pin.ext["interrupt_index"].index
-                    irq_pin.ext[
-                        "interrupt_index"
-                    ].controller = irq_controller.hierarchy_name
-                else:
-                    repr_dict[full_path]["index"] = 127
-                repr_dict[full_path]["fullpath"] = full_path
-
-        return repr_dict
-
-    def __setitem__(self, key: str, value: object) -> None:
-        """Set the state of an item in the interrupt_pins"""
+    def __setitem__(self, key, value):
         self._state[key] = value
